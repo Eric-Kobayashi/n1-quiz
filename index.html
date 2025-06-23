@@ -12,7 +12,10 @@
             <h1>日本語クイズ</h1>
             <div class="progress-container">
                 <div class="progress-bar" id="progressBar"></div>
-                <span class="progress-text" id="progressText">1 / 10</span>
+                <span class="progress-text" id="progressText">1 / 1</span>
+            </div>
+            <div class="answer-record hidden" id="answerRecord">
+                <!-- Answer record will be populated by JavaScript -->
             </div>
         </header>
 
@@ -21,7 +24,7 @@
             <div class="screen" id="startScreen">
                 <div class="welcome-content">
                     <h2>日本語語彙クイズへようこそ！</h2>
-                    <p>10問の日本語問題に挑戦しましょう。各問題には4つの選択肢があります。</p>
+                    <p id="welcomeText">日本語問題に挑戦しましょう。各問題には4つの選択肢があります。</p>
                     <button class="btn btn-primary" id="startBtn">クイズを始める</button>
                 </div>
             </div>
@@ -36,16 +39,16 @@
                         <!-- Choices will be populated by JavaScript -->
                     </div>
                     
+                    <div class="quiz-controls">
+                        <button class="btn btn-secondary" id="prevBtn" disabled>前へ</button>
+                        <button class="btn btn-primary" id="nextBtn" disabled>次へ</button>
+                    </div>
+                    
                     <div class="explanation-container hidden" id="explanationContainer">
                         <div class="explanation-content">
                             <h3 class="explanation-title">解説</h3>
                             <div class="explanation-text" id="explanationText"></div>
                         </div>
-                    </div>
-                    
-                    <div class="quiz-controls">
-                        <button class="btn btn-secondary" id="prevBtn" disabled>前へ</button>
-                        <button class="btn btn-primary" id="nextBtn" disabled>次へ</button>
                     </div>
                 </div>
             </div>

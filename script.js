@@ -17,6 +17,7 @@ const screens = {
 
 const elements = {
     startBtn: document.getElementById('startBtn'),
+    welcomeText: document.getElementById('welcomeText'),
     questionNumber: document.getElementById('questionNumber'),
     questionText: document.getElementById('questionText'),
     choicesContainer: document.getElementById('choicesContainer'),
@@ -26,6 +27,7 @@ const elements = {
     nextBtn: document.getElementById('nextBtn'),
     progressBar: document.getElementById('progressBar'),
     progressText: document.getElementById('progressText'),
+    answerRecord: document.getElementById('answerRecord'),
     scoreText: document.getElementById('scoreText'),
     scorePercentage: document.getElementById('scorePercentage'),
     resultsSummary: document.getElementById('resultsSummary'),
@@ -43,6 +45,113 @@ elements.reviewBtn.addEventListener('click', showReview);
 elements.restartBtn.addEventListener('click', restartQuiz);
 elements.backToResultsBtn.addEventListener('click', showResults);
 
+// Touch/swipe navigation
+let touchStartX = null;
+let touchStartY = null;
+
+// Add touch events to the quiz screen
+function initializeTouchNavigation() {
+    const quizScreen = document.getElementById('quizScreen');
+    
+    quizScreen.addEventListener('touchstart', handleTouchStart, { passive: true });
+    quizScreen.addEventListener('touchend', handleTouchEnd, { passive: true });
+}
+
+function handleTouchStart(e) {
+    touchStartX = e.touches[0].clientX;
+    touchStartY = e.touches[0].clientY;
+}
+
+function handleTouchEnd(e) {
+    if (!touchStartX || !touchStartY) return;
+    
+    const touchEndX = e.changedTouches[0].clientX;
+    const touchEndY = e.changedTouches[0].clientY;
+    
+    const deltaX = touchStartX - touchEndX;
+    const deltaY = touchStartY - touchEndY;
+    
+    // Check if horizontal swipe is more significant than vertical
+    if (Math.abs(deltaX) > Math.abs(deltaY)) {
+        // Minimum swipe distance (50px)
+        if (Math.abs(deltaX) > 50) {
+            if (deltaX > 0) {
+                // Swipe left - go to next question
+                if (!elements.nextBtn.disabled) {
+                    goToNextQuestion();
+                }
+            } else {
+                // Swipe right - go to previous question
+                if (!elements.prevBtn.disabled) {
+                    goToPreviousQuestion();
+                }
+            }
+        }
+    }
+    
+    touchStartX = null;
+    touchStartY = null;
+}
+
+// Keyboard navigation
+function initializeKeyboardNavigation() {
+    document.addEventListener('keydown', handleKeyDown);
+}
+
+function handleKeyDown(e) {
+    // Only handle navigation when quiz screen is visible
+    if (!screens.quiz.classList.contains('hidden')) {
+        switch(e.key) {
+            case 'ArrowLeft':
+                e.preventDefault();
+                if (!elements.prevBtn.disabled) {
+                    goToPreviousQuestion();
+                }
+                break;
+            case 'ArrowRight':
+                e.preventDefault();
+                if (!elements.nextBtn.disabled) {
+                    goToNextQuestion();
+                }
+                break;
+            case '1':
+            case '2':
+            case '3':
+            case '4':
+                e.preventDefault();
+                const choiceIndex = parseInt(e.key) - 1;
+                const choices = elements.choicesContainer.querySelectorAll('.choice');
+                if (choices[choiceIndex] && !answerRevealed) {
+                    selectChoice(choiceIndex);
+                }
+                break;
+        }
+    }
+}
+
+// Initialize welcome screen on page load
+async function initializeApp() {
+    try {
+        if (quizData.length === 0) {
+            const loadedData = await loadQuizData();
+            quizData = loadedData;
+        }
+        
+        // Update welcome text with correct number of questions
+        elements.welcomeText.textContent = `${quizData.length}問の日本語問題に挑戦しましょう。各問題には複数の選択肢があります。`;
+    } catch (error) {
+        console.log('Could not load quiz data for welcome screen, using default text');
+        elements.welcomeText.textContent = '日本語問題に挑戦しましょう。各問題には複数の選択肢があります。';
+    }
+}
+
+// Initialize the app when page loads
+document.addEventListener('DOMContentLoaded', () => {
+    initializeApp();
+    initializeTouchNavigation();
+    initializeKeyboardNavigation();
+});
+
 // Load quiz data from JSON file
 async function loadQuizData() {
     try {
@@ -58,13 +167,23 @@ async function loadQuizData() {
     }
 }
 
+// Shuffle array function
+function shuffleArray(array) {
+    const shuffled = [...array];
+    for (let i = shuffled.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+    }
+    return shuffled;
+}
+
 // Initialize the quiz
 async function startQuiz() {
     // Show loading message
     elements.startBtn.textContent = '読み込み中...';
     elements.startBtn.disabled = true;
     
-    // Load quiz data from JSON file
+    // Ensure quiz data is loaded
     if (quizData.length === 0) {
         try {
             quizData = await loadQuizData();
@@ -76,11 +195,15 @@ async function startQuiz() {
         }
     }
     
+    // Shuffle questions for random order
+    quizData = shuffleArray(quizData);
+    
     currentQuestionIndex = 0;
     userAnswers = [];
     quizCompleted = false;
     answerRevealed = false;
     showScreen('quiz');
+    initializeAnswerRecord();
     loadQuestion();
     updateProgress();
 }
@@ -89,6 +212,64 @@ async function startQuiz() {
 function showScreen(screenName) {
     Object.values(screens).forEach(screen => screen.classList.add('hidden'));
     screens[screenName].classList.remove('hidden');
+    
+    // Show/hide answer record based on screen
+    if (screenName === 'quiz') {
+        elements.answerRecord.classList.remove('hidden');
+    } else {
+        elements.answerRecord.classList.add('hidden');
+    }
+}
+
+// Initialize answer record display
+function initializeAnswerRecord() {
+    elements.answerRecord.innerHTML = '';
+    
+    // Create indicator for each question
+    for (let i = 0; i < quizData.length; i++) {
+        const indicator = document.createElement('span');
+        indicator.className = 'answer-indicator';
+        indicator.dataset.questionIndex = i;
+        indicator.textContent = '◯'; // Default circle
+        indicator.title = `問題 ${i + 1}`;
+        
+        // Add click handler to jump to question
+        indicator.addEventListener('click', () => jumpToQuestion(i));
+        
+        elements.answerRecord.appendChild(indicator);
+    }
+}
+
+// Jump to specific question
+function jumpToQuestion(questionIndex) {
+    if (questionIndex >= 0 && questionIndex < quizData.length) {
+        currentQuestionIndex = questionIndex;
+        loadQuestion();
+        updateProgress();
+    }
+}
+
+// Update answer record when question is answered
+function updateAnswerRecord(questionIndex, isCorrect) {
+    const indicator = elements.answerRecord.querySelector(`[data-question-index="${questionIndex}"]`);
+    if (indicator) {
+        indicator.textContent = isCorrect ? '○' : '×';
+        indicator.className = `answer-indicator ${isCorrect ? 'correct' : 'incorrect'}`;
+    }
+}
+
+// Update current question indicator
+function updateCurrentQuestionIndicator() {
+    // Remove current class from all indicators
+    elements.answerRecord.querySelectorAll('.answer-indicator').forEach(indicator => {
+        indicator.classList.remove('current');
+    });
+    
+    // Add current class to current question indicator
+    const currentIndicator = elements.answerRecord.querySelector(`[data-question-index="${currentQuestionIndex}"]`);
+    if (currentIndicator) {
+        currentIndicator.classList.add('current');
+    }
 }
 
 // Load current question
@@ -127,6 +308,7 @@ function loadQuestion() {
     }
     
     updateNavigationButtons();
+    updateCurrentQuestionIndicator();
 }
 
 // Handle choice selection
@@ -140,6 +322,31 @@ function selectChoice(choiceIndex) {
     showAnswerExplanation(choiceIndex);
     
     updateNavigationButtons();
+}
+
+// Format explanation text with markdown-like parsing and line breaks
+function formatExplanation(text) {
+    return text
+        // Preserve line breaks
+        .replace(/\n/g, '<br>')
+        // Bold text (**text** or __text__)
+        .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+        .replace(/__(.*?)__/g, '<strong>$1</strong>')
+        // Italic text (*text* or _text_)
+        .replace(/(?<!\*)\*([^*]+)\*(?!\*)/g, '<em>$1</em>')
+        .replace(/(?<!_)_([^_]+)_(?!_)/g, '<em>$1</em>')
+        // Code blocks (`code`)
+        .replace(/`([^`]+)`/g, '<code>$1</code>')
+        // Numbers followed by periods (1. 2. etc.) - make them stand out
+        .replace(/(\d+\.\s)/g, '<span class="explanation-number">$1</span>')
+        // Japanese quotes (「」) - style them nicely
+        .replace(/「([^」]+)」/g, '<span class="explanation-quote">「$1」</span>')
+        // Colons followed by explanations - make the label bold
+        .replace(/^([^:：]+[:：])/gm, '<strong>$1</strong>')
+        // Example patterns (例: or 例文: etc.)
+        .replace(/(例[^:：]*[:：])/g, '<span class="explanation-example">$1</span>')
+        // Question references (1番: 2番: etc.)
+        .replace(/(\d+番[:：])/g, '<span class="explanation-choice">$1</span>');
 }
 
 // Show answer explanation
@@ -168,10 +375,13 @@ function showAnswerExplanation(userChoiceIndex) {
         }
     });
     
-    // Show explanation
-    elements.explanationText.innerHTML = question.explanation;
+    // Show formatted explanation
+    elements.explanationText.innerHTML = formatExplanation(question.explanation);
     elements.explanationContainer.classList.remove('hidden');
     answerRevealed = true;
+    
+    // Update answer record
+    updateAnswerRecord(currentQuestionIndex, isCorrect);
 }
 
 // Navigation functions
@@ -306,7 +516,7 @@ function generateReviewContent() {
             
             <div class="review-explanation">
                 <strong>解説:</strong><br>
-                ${question.explanation}
+                ${formatExplanation(question.explanation)}
             </div>
         `;
         
