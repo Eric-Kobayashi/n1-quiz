@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>日本語クイズ - Japanese Quiz</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>日本語クイズ</h1>
+            <div class="progress-container">
+                <div class="progress-bar" id="progressBar"></div>
+                <span class="progress-text" id="progressText">1 / 10</span>
+            </div>
+        </header>
+
+        <main>
+            <!-- Start Screen -->
+            <div class="screen" id="startScreen">
+                <div class="welcome-content">
+                    <h2>日本語語彙クイズへようこそ！</h2>
+                    <p>10問の日本語問題に挑戦しましょう。各問題には4つの選択肢があります。</p>
+                    <button class="btn btn-primary" id="startBtn">クイズを始める</button>
+                </div>
+            </div>
+
+            <!-- Quiz Screen -->
+            <div class="screen hidden" id="quizScreen">
+                <div class="question-container">
+                    <div class="question-number" id="questionNumber">問題 1</div>
+                    <div class="question-text" id="questionText"></div>
+                    
+                    <div class="choices-container" id="choicesContainer">
+                        <!-- Choices will be populated by JavaScript -->
+                    </div>
+                    
+                    <div class="explanation-container hidden" id="explanationContainer">
+                        <div class="explanation-content">
+                            <h3 class="explanation-title">解説</h3>
+                            <div class="explanation-text" id="explanationText"></div>
+                        </div>
+                    </div>
+                    
+                    <div class="quiz-controls">
+                        <button class="btn btn-secondary" id="prevBtn" disabled>前へ</button>
+                        <button class="btn btn-primary" id="nextBtn" disabled>次へ</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Results Screen -->
+            <div class="screen hidden" id="resultsScreen">
+                <div class="results-content">
+                    <h2>クイズ完了！</h2>
+                    <div class="score-display">
+                        <div class="score-circle" id="scoreCircle">
+                            <span class="score-text" id="scoreText">0/10</span>
+                        </div>
+                        <p class="score-percentage" id="scorePercentage">0%</p>
+                    </div>
+                    
+                    <div class="results-summary" id="resultsSummary">
+                        <!-- Results will be populated by JavaScript -->
+                    </div>
+                    
+                    <div class="results-controls">
+                        <button class="btn btn-secondary" id="reviewBtn">解答を確認</button>
+                        <button class="btn btn-primary" id="restartBtn">もう一度</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Review Screen -->
+            <div class="screen hidden" id="reviewScreen">
+                <div class="review-content">
+                    <div class="review-header">
+                        <h2>解答確認</h2>
+                        <button class="btn btn-secondary" id="backToResultsBtn">結果に戻る</button>
+                    </div>
+                    
+                    <div class="review-questions" id="reviewQuestions">
+                        <!-- Review content will be populated by JavaScript -->
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html> 

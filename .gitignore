@@ -1,0 +1,13 @@
+# Ignore specific files (keep only questions.json, index.html, style.css, script.js, and .gitignore)
+questions_complete.json
+parse_questions.py
+qs.md
+qs2.md
+docker-compose.yml
+README.md
+.dockerignore
+nginx.conf
+Dockerfile
+
+# Ignore directories
+.cursor/ 
